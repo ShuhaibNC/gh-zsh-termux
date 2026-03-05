@@ -9,16 +9,6 @@ else
 fi
 zmodload -i zsh/complist
 
-# Aliases
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias grep='grep --color=auto'
-alias less='less -R'
-alias check-docker='sudo docker ps --no-trunc --format "table {{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}\t{{.Ports}}"'
-alias dig='dig +short'
-alias flushdns='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
-
 if [[ "$(uname)" == "Linux" ]]; then
     alias bat='batcat --theme base16 -p'
     alias ls='ls -h --color=auto'
@@ -65,12 +55,28 @@ export LANG="C.UTF-8"
 export LC_ALL="C.UTF-8"
 export LC_CTYPE="C.UTF-8"
 export LC_MESSAGES="C.UTF-8"
+export HOMEBREW_NO_ENV_HINTS=1
 
-# Extras
+# Sources
 source $HOME/.zsh/powerlevel10k/powerlevel10k.zsh-theme
 source $HOME/.zsh/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
 source $HOME/.zsh/completion.zsh
 source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-source $HOME/.zsh/history.zsh
+source $HOME/.zsh/history.zsh 
 source $HOME/.zsh/key-bindings.zsh
 
+# Aliases
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias grep='grep --color=auto'
+alias less='less -R'
+alias check-docker='sudo docker ps --no-trunc --format "table {{.Names}}\t{{.Image}}\t{{.Command}}\t{{.Status}}\t{{.Ports}}"'
+alias dig='dig +short'
+alias flushdns='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
+
+alias gam="~/_Tools/bin/gam7/gam"
+alias gyb="~/_Tools/bin/gyb/gyb"
+alias chrome='open -a "Google Chrome" --args --incognito'
+alias brave= 'open -a "Brave Browser" --args --incognito'
+alias firefox='open -a Firefox --args -private-window' 
