@@ -1,7 +1,5 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/bash
 set -e
-
-OS="$(uname)"
 
 #===========================================================
 # Helpers
@@ -12,18 +10,20 @@ err() { echo "ERROR: $1" >&2; exit 1; }
 backup_file() {
     local file="$1"
     if [[ -f "$file" ]]; then
-        cp "$file" "${file}.backup-$(date +%F)}" &> /dev/null
+        cp "$file" "${file}.backup-$(date +%F)" 2>/dev/null || true
         msg "Backup created: ${file}.backup-$(date +%F)"
     fi
 }
 
-copy_to_root() {
-    if [[ "$OS" == "Linux" ]]; then
-        sudo cp -r ~/.zsh /root/
-        sudo cp ~/.zshrc /root/ 2>/dev/null || true
-        sudo cp ~/.p10k.zsh /root/ 2>/dev/null || true
-    fi
-}
+#===========================================================
+# Update & Install Packages (Termux)
+#===========================================================
+msg "Updating packages"
+pkg update -y >/dev/null
+pkg upgrade -y >/dev/null
+
+msg "Installing dependencies (zsh, git, curl, bat)"
+pkg install -y zsh git curl bat >/dev/null
 
 #===========================================================
 # Ensure directories
@@ -32,90 +32,46 @@ mkdir -p ~/.zsh
 mkdir -p ~/.zsh/plugins
 
 #===========================================================
-# macOS – Command Line Tools
-#===========================================================
-install_clt_macos() {
-    msg "Checking Xcode Command Line Tools…"
-    if xcode-select -p &>/dev/null; then
-        msg "Command Line Tools already installed"
-        return
-    fi
-
-    msg "Installing macOS Command Line Tools…"
-    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-
-    PROD=$(
-        softwareupdate -l \
-        | grep -B 1 -E "Command Line Tools" \
-        | awk -F"*" '/^ *\*/ {print $2}' \
-        | sed 's/^ *Label: //' \
-        | sort -V \
-        | tail -n1
-    )
-
-    softwareupdate -i "$PROD" --verbose
-    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    xcode-select --switch /Library/Developer/CommandLineTools
-}
-
-#===========================================================
-# OS-specific Install
-#===========================================================
-if [[ "$OS" == "Linux" ]]; then
-    msg "Installing zsh, bat, git, curl"
-    sudo apt update &> /dev/null
-    sudo apt install -y zsh bat git curl &> /dev/null
-    export PATH="/usr/local/bin:$PATH"
-    hash -r
-fi
-
-if [[ "$OS" == "Darwin" ]]; then
-    install_clt_macos
-fi
-
-#===========================================================
-# Change Shell
+# Change shell to ZSH (Termux-safe)
 #===========================================================
 msg "Setting ZSH as default shell"
-if [[ "$OS" == "Darwin" ]]; then
-    chsh -s /bin/zsh &> /dev/null
-else
-    sudo chsh -s /usr/bin/zsh "$(whoami)" &> /dev/null
-    sudo chsh -s /usr/bin/zsh root &> /dev/null
-fi
+chsh -s zsh || msg "chsh not supported, will start zsh manually"
 
 #===========================================================
 # Backup old zshrc and download new
 #===========================================================
 backup_file ~/.zshrc
+
 msg "Downloading new .zshrc"
-curl -fsSL -o ~/.zshrc https://raw.githubusercontent.com/gustavohellwig/gh-zsh/main/.zshrc
+curl -fsSL -o ~/.zshrc https://raw.githubusercontent.com/shuhaibnc/gh-zsh-termux/main/.zshrc
 
 #===========================================================
-# Install Theme
+# Install Powerlevel10k Theme
 #===========================================================
 msg "Installing Powerlevel10k theme"
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.zsh/powerlevel10k &> /dev/null
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.zsh/powerlevel10k >/dev/null 2>&1
 
-curl -fsSL -o ~/.p10k.zsh https://raw.githubusercontent.com/gustavohellwig/gh-zsh/main/.p10k.zsh
+curl -fsSL -o ~/.p10k.zsh https://raw.githubusercontent.com/shuhaibnc/gh-zsh-termux/main/.p10k.zsh
 
 #===========================================================
 # Install Plugins
 #===========================================================
-msg "Installing Plugins"
-git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git ~/.zsh/fast-syntax-highlighting &> /dev/null
-git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions &> /dev/null
+msg "Installing plugins"
 
-curl -fsSL -o ~/.zsh/completion.zsh https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/lib/completion.zsh
-curl -fsSL -o ~/.zsh/history.zsh https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/lib/history.zsh
-curl -fsSL -o ~/.zsh/key-bindings.zsh https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/lib/key-bindings.zsh
+git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git ~/.zsh/fast-syntax-highlighting >/dev/null 2>&1
+
+git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions >/dev/null 2>&1
+
+curl -fsSL -o ~/.zsh/completion.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/lib/completion.zsh
+curl -fsSL -o ~/.zsh/history.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/lib/history.zsh
+curl -fsSL -o ~/.zsh/key-bindings.zsh https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/lib/key-bindings.zsh
 
 #===========================================================
 # Update .zshrc sources
 #===========================================================
 cat << 'EOF' >> ~/.zshrc
 
-# Custom additions
+# Custom additions (Termux)
 source $HOME/.zsh/powerlevel10k/powerlevel10k.zsh-theme
 source $HOME/.zsh/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
 source $HOME/.zsh/completion.zsh
@@ -126,17 +82,12 @@ source $HOME/.zsh/key-bindings.zsh
 EOF
 
 #===========================================================
-# Copy to root (Linux only)
-#===========================================================
-copy_to_root
-
-#===========================================================
 # Finish
 #===========================================================
 msg "Installation Finished!"
-msg "→ Reopen terminal if theme doesn't load automatically."
+msg "→ Restart Termux or run: zsh"
 
 #===========================================================
-# Replace current shell immediately with login ZSH
+# Launch ZSH immediately
 #===========================================================
-exec zsh -l
+exec zsh
