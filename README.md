@@ -23,7 +23,7 @@ For Linux
 ## Installation
 
 ``` bash
-curl -fsSL https://raw.githubusercontent.com/shuhaib/gh-zsh-termux/main/gh-zsh-termux.sh | bash
+curl -fsSL https://raw.githubusercontent.com/shuhaibnc/gh-zsh-termux/main/gh-zsh-termux.sh | bash
 ```
 
 ## Notes
